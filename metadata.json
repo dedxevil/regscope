@@ -1,0 +1,7 @@
+{
+  "name": "ReguCheck: Global Ingredient Compliance",
+  "description": "A dashboard for regulatory affairs teams to monitor and check the compliance of wellness product ingredients against drug regulations in various countries, powered by the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

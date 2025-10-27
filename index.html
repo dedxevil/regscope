@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReguCheck: Global Ingredient Compliance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Barlow', 'sans-serif'],
+            },
+            colors: {
+              'spotify-dark': '#121212',
+              'spotify-light-dark': '#181818',
+              'spotify-card': '#282828',
+              'spotify-green': '#1DB954',
+              'spotify-gray': '#B3B3B3',
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      :root {
+        --scrollbar-track-bg: #f1f5f9; /* slate-100 */
+        --scrollbar-thumb-bg: #94a3b8; /* slate-400 */
+        --scrollbar-thumb-hover-bg: #64748b; /* slate-500 */
+      }
+      html.dark {
+        --scrollbar-track-bg: #181818; /* spotify-light-dark */
+        --scrollbar-thumb-bg: #535353;
+        --scrollbar-thumb-hover-bg: #B3B3B3; /* spotify-gray */
+      }
+      /* For Webkit-based browsers (Chrome, Safari) */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track-bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb-bg);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover-bg);
+      }
+      /* For Firefox */
+      html {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+      }
+    </style>
+    <script>
+      // Apply theme from localStorage on initial load to prevent FOUC
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-50 dark:bg-spotify-dark font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
