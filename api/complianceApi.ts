@@ -1,15 +1,28 @@
 import type { ComplianceStatus } from '../types';
+import { MOCK_PRODUCTS } from '../constants';
+import type { Product } from '../types';
 
 // A function to simulate network latency
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- MOCK API LAYER ---
-// This file contains all the data fetching logic for the application.
-// Currently, it uses mock data to simulate API responses.
-//
-// TO CONNECT TO A REAL BACKEND:
-// Replace the logic inside each function with your actual API calls
-// using `fetch`, `axios`, or any other library.
+
+/**
+ * Fetches the list of ingredients for a given product.
+ * @returns A promise that resolves to an array of ingredient names and the company.
+ */
+export const fetchProductIngredients = async (productName: string): Promise<{ company: Product['company'], ingredients: string[] }> => {
+    await sleep(400 + Math.random() * 300);
+
+    const product = MOCK_PRODUCTS.find(p => p.name.toLowerCase() === productName.toLowerCase());
+
+    if (!product) {
+        throw new Error(`Product "${productName}" not found in our database.`);
+    }
+
+    return { company: product.company, ingredients: product.ingredients };
+};
+
 
 /**
  * Fetches a simple Yes/No compliance status for an ingredient in a country.
@@ -20,12 +33,6 @@ export const fetchSimpleComplianceStatus = async (ingredientName: string, countr
     await sleep(50 + Math.random() * 200);
 
     // TODO: Replace this mock logic with a real API call
-    // Example:
-    // const response = await fetch(`/api/compliance/status?ingredient=${ingredientName}&country=${countryName}`);
-    // if (!response.ok) return 'Error';
-    // const data = await response.json();
-    // return data.status;
-
     if (ingredientName.toLowerCase().includes('error')) {
         return 'Error';
     }
@@ -41,30 +48,55 @@ export const fetchSimpleComplianceStatus = async (ingredientName: string, countr
 export const fetchComplianceInfo = async (ingredientName: string, countryName:string): Promise<string> => {
     await sleep(500 + Math.random() * 500);
 
-    // TODO: Replace this mock logic with a real API call
-    // Example:
-    // const response = await fetch(`/api/compliance/report?ingredient=${ingredientName}&country=${countryName}`);
-    // if (!response.ok) return 'Failed to load detailed report.';
-    // const data = await response.json();
-    // return data.report;
+    // --- Helper functions for randomization ---
+    const pickRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    const pickSome = <T>(arr: T[], count: number): T[] => {
+        const shuffled = [...arr].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    };
+
+    // --- Data Pools for Randomization ---
+    const statuses = [
+        "**Compliant** - Permitted for use without restrictions.",
+        "**Restricted** - Requires specific labeling and dosage limitations.",
+        "**Non-Compliant** - Banned for use in wellness products."
+    ];
+    const authorities = ["National Health Authority (NHA)", "Federal Wellness Board (FWB)", "Dietary Supplement Commission (DSC)", "Agency for Therapeutic Goods (ATG)"];
+    const acts = ["Wellness and Supplements Act of 2019", "Food and Drug Safety Modernization Act of 2022", "Herbal Product Purity Act of 2018", "Consumer Health Protection Law of 2020"];
+    const classifications = ["Traditional Herbal Product", "Dietary Ingredient", "Novel Food Supplement", "Listed Complementary Medicine"];
+    const allIssues = [
+        "*   **Dosage Limits:** The maximum recommended daily dosage must not exceed **250mg**.",
+        "*   **Marketing Claims:** Cannot be marketed with claims of treating or curing specific diseases.",
+        "*   **Novel Food Status:** New extraction methods may require a '**Novel Food**' application.",
+        "*   **Registration:** The product must be registered in the **National Herbal Product Database**.",
+        "*   **Purity Standards:** Must meet a purity standard of **95%** as verified by third-party labs.",
+        "*   **Allergen Labeling:** Must explicitly state if processed in a facility with common allergens."
+    ];
+    const allRecommendations = [
+        "*   Ensure product packaging clearly states the daily dosage and does not make prohibited medical claims.",
+        "*   Submit the product for registration with the relevant national authority.",
+        "*   Consult with a local regulatory expert to review marketing materials before launch.",
+        "*   Conduct a final lab analysis to confirm purity standards before market entry.",
+        "*   Update packaging to include the latest allergen information as per local guidelines."
+    ];
+
+    // --- Build the Randomized Report ---
+    const randomStatus = pickRandom(statuses);
+    const randomIssues = pickSome(allIssues, Math.floor(Math.random() * 2) + 3).join('\n'); // 3 to 4 issues
+    const randomRecommendations = pickSome(allRecommendations, Math.floor(Math.random() * 2) + 2).join('\n'); // 2 to 3 recommendations
 
     const mockReport = `
 ### OVERALL COMPLIANCE STATUS
-**STATUS:** **Restricted** - Requires specific labeling and dosage limitations.
+**STATUS:** ${randomStatus}
 
 ### SUMMARY OF REGULATIONS
-In **${countryName}**, ingredients like "**${ingredientName}**" are regulated by the **National Health Authority (NHA)** under the **Wellness and Supplements Act of 2019**. It is classified as a '**Traditional Herbal Product**'.
+In **${countryName}**, ingredients like "**${ingredientName}**" are regulated by the **${pickRandom(authorities)}** under the **${pickRandom(acts)}**. It is classified as a '**${pickRandom(classifications)}**'.
 
 ### POTENTIAL ISSUES & VIOLATIONS
-*   **Dosage Limits:** The maximum recommended daily dosage must not exceed **250mg**.
-*   **Marketing Claims:** Cannot be marketed with claims of treating or curing specific diseases.
-*   **Novel Food Status:** New extraction methods may require a '**Novel Food**' application to the NHA.
-*   **Registration:** The product must be registered in the **National Herbal Product Database**.
+${randomIssues}
 
 ### RECOMMENDATIONS
-*   Ensure product packaging clearly states the daily dosage and does not make prohibited medical claims.
-*   Submit the product for registration with the NHA.
-*   Consult with a local regulatory expert to review marketing materials before launch in **${countryName}**.
+${randomRecommendations}
     `;
 
     return mockReport.trim();
@@ -76,13 +108,6 @@ In **${countryName}**, ingredients like "**${ingredientName}**" are regulated by
  */
 export const fetchIngredientSummary = async (ingredientName: string): Promise<string> => {
     await sleep(300);
-
-    // TODO: Replace this mock logic with a real API call
-    // Example:
-    // const response = await fetch(`/api/ingredients/summary?name=${ingredientName}`);
-    // if (!response.ok) return 'Failed to load summary.';
-    // const data = await response.json();
-    // return data.summary;
 
     return `**${ingredientName}** is a key component in traditional wellness practices, primarily recognized for its adaptogenic properties. It is commonly sourced from sustainable farms in Southeast Asia. Our formulation utilizes a proprietary cold-press extraction method to ensure maximum purity and potency. From a regulatory standpoint, it is classified as a dietary supplement in major markets but is under review as a novel food in the European Union due to the unique extraction process. This requires careful monitoring of labeling and marketing claims to avoid being classified as an unauthorized medicinal product.`;
 };

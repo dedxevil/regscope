@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { USERS } from '../constants';
+import type { User } from '../types';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (user: User) => void;
 }
 
 const ShieldIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -11,9 +13,14 @@ const ShieldIcon: React.FC<{className?: string}> = ({ className }) => (
 );
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string>(USERS[0].email);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    const user = USERS.find(u => u.email === selectedUserEmail);
+    if (user) {
+      onLogin(user);
+    }
   };
 
   return (
@@ -22,7 +29,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <div className="flex flex-col items-center">
           <ShieldIcon className="w-16 h-16 text-blue-600 dark:text-spotify-green" />
           <h1 className="mt-4 text-3xl font-extrabold text-center text-gray-900 dark:text-gray-100">
-            ReguCheck
+            RegScope
           </h1>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-spotify-gray">
             Global Ingredient Compliance Dashboard
@@ -31,17 +38,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-t-md focus:outline-none focus:ring-spotify-green focus:border-spotify-green focus:z-10 sm:text-sm"
-                placeholder="Email address (mock)"
-                defaultValue="regulator@wellness.com"
-              />
+              <label htmlFor="user-select" className="sr-only">Select User</label>
+              <select
+                id="user-select"
+                value={selectedUserEmail}
+                onChange={(e) => setSelectedUserEmail(e.target.value)}
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-t-md focus:outline-none focus:ring-spotify-green focus:border-spotify-green focus:z-10 sm:text-sm"
+              >
+                <option value="" disabled>Select a user to sign in</option>
+                {USERS.map(user => (
+                  <option key={user.email} value={user.email}>
+                    {user.email}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label htmlFor="password" className="sr-only">Password</label>
@@ -51,7 +61,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-b-md focus:outline-none focus:ring-spotify-green focus:border-spotify-green focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-b-md focus:outline-none focus:ring-spotify-green focus:border-spotify-green focus:z-10 sm:text-sm"
                 placeholder="Password (mock)"
                 defaultValue="**********"
               />
@@ -59,11 +69,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </div>
           <button
             type="submit"
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-spotify-green dark:hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spotify-green transition-colors duration-200"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-spotify-green dark:hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spotify-green transition-colors duration-200"
           >
             Sign in
           </button>
         </form>
+        <p className="text-center text-xs text-gray-500 dark:text-spotify-gray">
+            Powered by Graviq.ai
+        </p>
       </div>
     </div>
   );

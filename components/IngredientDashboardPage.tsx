@@ -75,7 +75,7 @@ const generateRandomizedIngredients = (): Ingredient[] => {
     }));
 };
 
-const DashboardPage: React.FC = () => {
+const IngredientDashboardPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
     const [complianceResults, setComplianceResults] = useState<CountryComplianceStatus[]>([]);
@@ -298,4 +298,4 @@ const DashboardPage: React.FC = () => {
     );
 };
 
-export default DashboardPage;
+export default IngredientDashboardPage;

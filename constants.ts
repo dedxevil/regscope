@@ -1,5 +1,4 @@
-
-import type { Ingredient, Country, IngredientType, IngredientStatus } from './types';
+import type { Ingredient, Country, IngredientType, IngredientStatus, Product, User, RegulatoryDocument } from './types';
 
 export const COUNTRIES: Country[] = [
     { code: 'US', name: 'United States' },
@@ -23,6 +22,43 @@ export const COUNTRIES: Country[] = [
     { code: 'NL', name: 'Netherlands' },
     { code: 'SG', name: 'Singapore' },
 ];
+
+export const USERS: User[] = [
+  { email: 'admin@graviq.ai', role: 'admin', name: 'Jobby David', title: 'Administrator' },
+  { email: 'product-manager@graviq.ai', role: 'product_manager', name: 'Ben Carter', title: 'Product Manager' },
+  { email: 'compliance@graviq.ai', role: 'compliance_manager', name: 'Chloe Davis', title: 'Compliance Manager' },
+  { email: 'logistics@graviq.ai', role: 'logistics', name: 'David Evans', title: 'Logistics' },
+];
+
+export const MOCK_PRODUCTS: Product[] = [
+  // Himalaya Wellness
+  { name: 'Liv. 52 DS', company: 'Himalaya Wellness', ingredients: ['Himsra (Capparis spinosa)', 'Kasani (Cichorium intybus)', 'Mandur bhasma', 'Kakamachi (Solanum nigrum)', 'Arjuna (Terminalia arjuna)'], status: 'Compliant' },
+  { name: 'Septilin', company: 'Himalaya Wellness', ingredients: ['Guggulu (Balsamodendron mukul)', 'Guduchi (Tinospora cordifolia)', 'Manjishtha (Rubia cordifolia)', 'Amalaki (Emblica officinalis)', 'Shigru (Moringa pterygosperma)'], status: 'Compliant' },
+  { name: 'Purifying Neem Face Wash', company: 'Himalaya Wellness', ingredients: ['Neem (Azadirachta indica)', 'Turmeric (Curcuma longa)', 'Vetiver (Vetiveria zizanioides)'], status: 'Requires Review' },
+  
+  // Unilever Icecream (Kwality Wall's)
+  { name: 'Cornetto Double Chocolate', company: 'Unilever Icecream', ingredients: ['Milk Solids', 'Sugar', 'Cocoa Solids', 'Palm Oil', 'Liquid Glucose', 'Emulsifier (471)', 'Stabilisers (410, 412, 407)', 'Wheat Flour'], status: 'Compliant' },
+  { name: 'Magnum Classic', company: 'Unilever Icecream', ingredients: ['Reconstituted Skimmed Milk', 'Sugar', 'Cocoa Butter', 'Cocoa Mass', 'Coconut Oil', 'Glucose Syrup', 'Whey Solids (Milk)', 'Butteroil (Milk)', 'Emulsifiers (E471, Soya Lecithin, E476)', 'Vanilla Bean Pieces'], status: 'Non-Compliant' },
+
+  // Asian Paints (Treating as chemical products for demo)
+  { name: 'Royale Aspira', company: 'Asian Paints', ingredients: ['Pure Acrylic Polymer Emulsion', 'Titanium Dioxide', 'Crystalline Silica', 'Propylene Glycol', 'Fungicides', 'Water'], status: 'Requires Review' },
+  { name: 'Tractor Emulsion', company: 'Asian Paints', ingredients: ['Styrene Acrylic Emulsion', 'Titanium Dioxide', 'Calcium Carbonate', 'Kaolin', 'Biocides'], status: 'Compliant' },
+
+  // Dabur
+  { name: 'Dabur Chyawanprash', company: 'Dabur', ingredients: ['Amla (Emblica officinalis)', 'Ashwagandha (Withania somnifera)', 'Pippali (Piper longum)', 'Shatavari (Asparagus racemosus)', 'Bilva (Aegle marmelos)', 'Ghee', 'Honey'], status: 'Compliant' },
+  { name: 'Dabur Honey', company: 'Dabur', ingredients: ['Honey'], status: 'Compliant' },
+  { name: 'Pudin Hara Pearls', company: 'Dabur', ingredients: ['Mentha Piperita (Pudina Satva)', 'Mentha Spicata (Pudina Satva)'], status: 'Non-Compliant' }
+];
+
+export const MOCK_REGULATORY_DOCUMENTS: RegulatoryDocument[] = [
+    { id: 'doc1', name: 'W3C_Dummy_Test.pdf', country: COUNTRIES[3], status: 'Ready', uploadedAt: '2025-10-26', size: '2.3MB', fileUrl: 'https://corsproxy.io/?https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+    { id: 'doc2', name: 'US_FDA_Dietary_Supplements_Guidelines.pdf', country: COUNTRIES[0], status: 'Ready', uploadedAt: '2025-10-22', size: '1.8MB', fileUrl: '' },
+    { id: 'doc3', name: 'Japan_Food_Sanitation_Law_Update_2023.docx', country: COUNTRIES[5], status: 'Training', uploadedAt: '2025-11-01', size: '850KB', fileUrl: '' },
+    { id: 'doc4', name: 'Canada_NHP_Regulations_SOR-2003.pdf', country: COUNTRIES[1], status: 'Ready', uploadedAt: '2025-09-15', size: '3.1MB', fileUrl: '' },
+    { id: 'doc5', name: 'Brazil_ANVISA_Food_Supplements.pdf', country: COUNTRIES[7], status: 'Uploaded', uploadedAt: '2025-11-05', size: '1.2MB', fileUrl: '' },
+    { id: 'doc6', name: 'Australia_TGA_Listed_Medicines.pdf', country: COUNTRIES[6], status: 'Uploaded', uploadedAt: '2025-11-06', size: '2.5MB', fileUrl: '' },
+];
+
 
 const totalCountries = COUNTRIES.length;
 

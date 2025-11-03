@@ -1,6 +1,6 @@
-# ReguCheck: Global Ingredient Compliance Dashboard
+# RegScope: Global Ingredient Compliance Dashboard
 
-ReguCheck is a sophisticated, single-view dashboard prototype designed for regulatory affairs teams. It provides a "command center" for monitoring and checking the compliance of wellness product ingredients against drug regulations in various countries.
+RegScope is a sophisticated, single-view dashboard prototype designed for regulatory affairs teams. It provides a "command center" for monitoring and checking the compliance of wellness product ingredients against drug regulations in various countries.
 
 The entire application is built as a responsive, single-page application (SPA) that fits the screen without scrolling, providing an immediate, holistic view of the global compliance landscape.
 
