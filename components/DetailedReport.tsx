@@ -7,9 +7,10 @@ interface DetailedReportProps {
     defaultText: string;
 }
 
-// A component to parse and render text with **highlighted** segments
+// A component to parse and render text with **highlighted** and linked segments
 const HighlightedText: React.FC<{ text: string }> = ({ text }) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+    // Regex to split by **bold** text or [link](url) markdown, keeping the delimiters
+    const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
     return (
         <>
             {parts.map((part, i) => {
@@ -23,6 +24,17 @@ const HighlightedText: React.FC<{ text: string }> = ({ text }) => {
                     
                     return <strong key={i} className={colorClass}>{content}</strong>;
                 }
+                
+                // Check for markdown link format: [text](url)
+                if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+                    const match = part.match(/\[(.*?)\]\((.*?)\)/);
+                    if (match) {
+                        const linkText = match[1];
+                        const url = match[2];
+                        return <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline break-all">{linkText}</a>;
+                    }
+                }
+
                 return part;
             })}
         </>

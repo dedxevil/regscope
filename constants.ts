@@ -32,20 +32,20 @@ export const USERS: User[] = [
 
 export const MOCK_PRODUCTS: Product[] = [
   // Himalaya Wellness
-  { name: 'Liv. 52 DS', company: 'Himalaya Wellness', ingredients: ['Himsra (Capparis spinosa)', 'Kasani (Cichorium intybus)', 'Mandur bhasma', 'Kakamachi (Solanum nigrum)', 'Arjuna (Terminalia arjuna)'], status: 'Compliant' },
-  { name: 'Septilin', company: 'Himalaya Wellness', ingredients: ['Guggulu (Balsamodendron mukul)', 'Guduchi (Tinospora cordifolia)', 'Manjishtha (Rubia cordifolia)', 'Amalaki (Emblica officinalis)', 'Shigru (Moringa pterygosperma)'], status: 'Compliant' },
-  { name: 'Purifying Neem Face Wash', company: 'Himalaya Wellness', ingredients: ['Neem (Azadirachta indica)', 'Turmeric (Curcuma longa)', 'Vetiver (Vetiveria zizanioides)'], status: 'Requires Review' },
+  { name: 'Liv. 52 DS', company: 'Himalaya Wellness', ingredients: ['Himsra (Capparis spinosa)', 'Kasani (Cichorium intybus)', 'Mandur bhasma', 'Kakamachi (Solanum nigrum)', 'Arjuna (Terminalia arjuna)', 'Licorice (Glycyrrhiza glabra)'], status: 'Non-Compliant' },
+  { name: 'Septilin', company: 'Himalaya Wellness', ingredients: ['Guggulu (Balsamodendron mukul)', 'Guduchi (Tinospora cordifolia)', 'Manjishtha (Rubia cordifolia)', 'Amalaki (Emblica officinalis)', 'Shigru (Moringa pterygosperma)'], status: 'Non-Compliant' },
+  { name: 'Purifying Neem Face Wash', company: 'Himalaya Wellness', ingredients: ['Neem (Azadirachta indica)', 'Turmeric (Curcuma longa)', 'Vetiver (Vetiveria zizanioides)', 'Salicylic Acid'], status: 'Non-Compliant' },
   
   // Unilever Icecream (Kwality Wall's)
-  { name: 'Cornetto Double Chocolate', company: 'Unilever Icecream', ingredients: ['Milk Solids', 'Sugar', 'Cocoa Solids', 'Palm Oil', 'Liquid Glucose', 'Emulsifier (471)', 'Stabilisers (410, 412, 407)', 'Wheat Flour'], status: 'Compliant' },
+  { name: 'Cornetto Double Chocolate', company: 'Unilever Icecream', ingredients: ['Milk Solids', 'Sugar', 'Cocoa Solids', 'Palm Oil', 'Liquid Glucose', 'Emulsifier (471)', 'Stabilisers (410, 412, 407)', 'Wheat Flour', 'Cyclamate (E952)'], status: 'Non-Compliant' },
   { name: 'Magnum Classic', company: 'Unilever Icecream', ingredients: ['Reconstituted Skimmed Milk', 'Sugar', 'Cocoa Butter', 'Cocoa Mass', 'Coconut Oil', 'Glucose Syrup', 'Whey Solids (Milk)', 'Butteroil (Milk)', 'Emulsifiers (E471, Soya Lecithin, E476)', 'Vanilla Bean Pieces'], status: 'Non-Compliant' },
 
   // Asian Paints (Treating as chemical products for demo)
-  { name: 'Royale Aspira', company: 'Asian Paints', ingredients: ['Pure Acrylic Polymer Emulsion', 'Titanium Dioxide', 'Crystalline Silica', 'Propylene Glycol', 'Fungicides', 'Water'], status: 'Requires Review' },
-  { name: 'Tractor Emulsion', company: 'Asian Paints', ingredients: ['Styrene Acrylic Emulsion', 'Titanium Dioxide', 'Calcium Carbonate', 'Kaolin', 'Biocides'], status: 'Compliant' },
+  { name: 'Royale Aspira', company: 'Asian Paints', ingredients: ['Pure Acrylic Polymer Emulsion', 'Titanium Dioxide', 'Crystalline Silica', 'Propylene Glycol', 'Fungicides', 'Water', 'Lead Carbonate'], status: 'Non-Compliant' },
+  { name: 'Tractor Emulsion', company: 'Asian Paints', ingredients: ['Styrene Acrylic Emulsion', 'Titanium Dioxide', 'Calcium Carbonate', 'Kaolin', 'Biocides'], status: 'Non-Compliant' },
 
   // Dabur
-  { name: 'Dabur Chyawanprash', company: 'Dabur', ingredients: ['Amla (Emblica officinalis)', 'Ashwagandha (Withania somnifera)', 'Pippali (Piper longum)', 'Shatavari (Asparagus racemosus)', 'Bilva (Aegle marmelos)', 'Ghee', 'Honey'], status: 'Compliant' },
+  { name: 'Dabur Chyawanprash', company: 'Dabur', ingredients: ['Amla (Emblica officinalis)', 'Ashwagandha (Withania somnifera)', 'Pippali (Piper longum)', 'Shatavari (Asparagus racemosus)', 'Bilva (Aegle marmelos)', 'Ghee', 'Honey', 'Ephedra (Ma Huang)'], status: 'Non-Compliant' },
   { name: 'Dabur Honey', company: 'Dabur', ingredients: ['Honey'], status: 'Compliant' },
   { name: 'Pudin Hara Pearls', company: 'Dabur', ingredients: ['Mentha Piperita (Pudina Satva)', 'Mentha Spicata (Pudina Satva)'], status: 'Non-Compliant' }
 ];
@@ -62,45 +62,69 @@ export const MOCK_REGULATORY_DOCUMENTS: RegulatoryDocument[] = [
 
 const totalCountries = COUNTRIES.length;
 
-const ingredientData: { name: string; product: string; type: IngredientType }[] = [
-  { name: 'Meshashringi (Gymnema sylvestre) leaf extract', product: 'Meshashringi Metabolic Wellness', type: 'Herbal Extract' },
-  { name: 'Balsamodendron Mukul', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Tinospora cordifolia', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Rubia cordifolia', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Emblica officinalis', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Moringa plerygosperma', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Glycyrrhiza glabre', product: 'Septilin', type: 'Herbal Extract' },
-  { name: 'Bael tree (stem bark)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Malay bush beech (stem bark)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Oroxylum (stem bark)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Fragrant padri tree (stem bark)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Tribulus (whole plant)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Arjuna (bark)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Ashwagandha (root)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Shilajeet (mineral pitch)', product: 'HeartCare', type: 'Mineral Pitch' },
-  { name: 'Chebulic myrobalan (fruit rind)', product: 'HeartCare', type: 'Herbal Extract' },
-  { name: 'Cowhage / Velvet Bean', product: 'Tentex Forte', type: 'Processed Herb' },
-  { name: 'Kapikachchu', product: 'Tentex Forte', type: 'Processed Herb' },
-  { name: 'Shilajeet', product: 'Tentex Forte', type: 'Mineral Pitch' },
-  { name: 'Small Caltrops', product: 'Tentex Forte', type: 'Processed Herb' },
-  { name: 'Gokshura', product: 'Tentex Forte', type: 'Processed Herb' },
-  { name: 'Garcinia', product: 'Ayurslim', type: 'Herbal Extract' },
-  { name: 'Gymnema', product: 'Ayurslim', type: 'Herbal Extract' },
-];
+// --- MOCK INGREDIENT GENERATION ---
+// Create a definitive, unique list of all ingredients from the products.
+const allProductIngredients = MOCK_PRODUCTS.flatMap(p => p.ingredients);
+const uniqueIngredientNames = Array.from(new Set(allProductIngredients));
 
-// FIX: Use the explicit IngredientStatus type for the statuses array.
-const statuses: IngredientStatus[] = ['Compliant', 'Requires Review', 'Non-Compliant', 'Unchecked'];
+// Helper to determine ingredient type based on keywords.
+const getIngredientType = (name: string): IngredientType => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('shilajeet') || lowerName.includes('bhasma')) {
+        return 'Mineral Pitch';
+    }
+    if (['emulsifier', 'stabiliser', 'preservative', 'acid', 'glycol', 'biocides', 'fungicides', 'carbonate', 'dioxide', 'cyclamate', 'lecithin'].some(term => lowerName.includes(term))) {
+        return 'Processed Herb';
+    }
+    return 'Herbal Extract';
+};
 
-export const MOCK_INGREDIENTS: Ingredient[] = ingredientData.map((ing, index) => ({
-    id: index + 1,
-    name: ing.name,
-    description: `An ingredient in the "${ing.product}" wellness product line.`,
-    status: statuses[index % statuses.length],
-    type: ing.type,
-    checkedCountries: Math.floor(Math.random() * totalCountries),
-    totalCountries: totalCountries,
-    flaggedCount: Math.floor(Math.random() * 15),
-}));
+// Helper for a deterministic initial status to ensure the dashboard shows a realistic mix.
+const getInitialIngredientStatus = (name: string): IngredientStatus => {
+    const lowerName = name.toLowerCase();
+    
+    // High-risk ingredients, likely Non-Compliant somewhere.
+    const nonCompliantKeywords = [
+        'mentha', 'guggulu', 'ephedra', 'lead carbonate', 'cyclamate', 'salicylic acid', 'mandur bhasma', 'kasani'
+    ];
+    if (nonCompliantKeywords.some(keyword => lowerName.includes(keyword))) {
+        return 'Non-Compliant';
+    }
+
+    // Medium-risk ingredients, often requiring review.
+    const reviewKeywords = [
+        'shilajeet', 'ashwagandha', 'guduchi', 'neem', 'crystalline silica', 'licorice', 'arjuna', 'biocides', 'shigru'
+    ];
+    if (reviewKeywords.some(keyword => lowerName.includes(keyword))) {
+        return 'Requires Review';
+    }
+    
+    // Fallback for others to create variety, biased towards compliant.
+    const seed = lowerName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const fallbackStatuses: IngredientStatus[] = ['Compliant', 'Compliant', 'Requires Review', 'Compliant', 'Unchecked'];
+    return fallbackStatuses[seed % fallbackStatuses.length];
+};
+
+// Generate the MOCK_INGREDIENTS list from the definitive product ingredient list.
+export const MOCK_INGREDIENTS: Ingredient[] = uniqueIngredientNames.map((name, index) => {
+    // Find a product this ingredient belongs to for a better description.
+    const productExample = MOCK_PRODUCTS.find(p => p.ingredients.includes(name));
+    const description = productExample 
+        ? `An ingredient used in products like "${productExample.name}".`
+        : 'A wellness product ingredient.';
+        
+    return {
+        id: index + 1,
+        name: name,
+        description: description,
+        status: getInitialIngredientStatus(name), // Use the deterministic status function
+        type: getIngredientType(name),
+        checkedCountries: Math.floor(Math.random() * totalCountries),
+        totalCountries: totalCountries,
+        flaggedCount: Math.floor(Math.random() * 25), // Increased potential flagged count
+    };
+});
+
 
 export const MOCK_COUNTRY_COMPLIANCE_DATA = [
     { country: 'USA', compliant: 18, nonCompliant: 2, review: 3 },

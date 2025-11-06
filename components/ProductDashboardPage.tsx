@@ -82,7 +82,6 @@ const getAcronym = (name: string): string => {
 };
 
 const ProductDashboardPage: React.FC = () => {
-    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isProductListCollapsed, setIsProductListCollapsed] = useState(false);
@@ -93,9 +92,24 @@ const ProductDashboardPage: React.FC = () => {
     const [isReportLoading, setIsReportLoading] = useState(false);
     const [expandedIngredient, setExpandedIngredient] = useState<string | null>(null);
     
+    // Individual loading states for a staggered effect
+    const [isProductListLoading, setIsProductListLoading] = useState(true);
+    const [isLoadingOverallStatus, setIsLoadingOverallStatus] = useState(true);
+    const [isLoadingComplianceRate, setIsLoadingComplianceRate] = useState(true);
+    const [isLoadingByCountry, setIsLoadingByCountry] = useState(true);
+    const [isLoadingTrend, setIsLoadingTrend] = useState(true);
+    const [isLoadingByBrand, setIsLoadingByBrand] = useState(true);
+    
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 1500);
-        return () => clearTimeout(timer);
+        const timers = [
+            setTimeout(() => setIsProductListLoading(false), 500),
+            setTimeout(() => setIsLoadingOverallStatus(false), 800),
+            setTimeout(() => setIsLoadingComplianceRate(false), 1000),
+            setTimeout(() => setIsLoadingByCountry(false), 1200),
+            setTimeout(() => setIsLoadingTrend(false), 1400),
+            setTimeout(() => setIsLoadingByBrand(false), 1600),
+        ];
+        return () => timers.forEach(clearTimeout);
     }, []);
 
     const companyNames = useMemo(() => Array.from(new Set(MOCK_PRODUCTS.map(p => p.company))), []);
@@ -212,7 +226,7 @@ const ProductDashboardPage: React.FC = () => {
                 </button>
             </div>
             
-            {isLoading ? <ProductListSkeleton collapsed={isCollapsed} /> : isCollapsed ? (
+            {isProductListLoading ? <ProductListSkeleton collapsed={isCollapsed} /> : isCollapsed ? (
                  <div className="flex-grow overflow-y-auto">
                     <ul>
                         {filteredProducts.map(p => (
@@ -321,11 +335,11 @@ const ProductDashboardPage: React.FC = () => {
                     ) : (
                         <div className="h-full overflow-y-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Overall Product Status</h3><div className="flex-grow flex items-center justify-center"><ComplianceChart data={chartData.overall} totalLabel="Products" isLoading={isLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Product Compliance Rate</h3><div className="flex-grow flex items-center justify-center"><ComplianceRateGauge value={chartData.complianceRate} isLoading={isLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Country</h3><div className="flex-grow"><ComplianceByCountryChart data={MOCK_COUNTRY_COMPLIANCE_DATA} isLoading={isLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliant Trend (6 Months)</h3><div className="flex-grow"><ComplianceTrendChart data={MOCK_TREND_DATA} isLoading={isLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] md:col-span-2"><h3 className="text-md font-bold mb-2 flex-shrink-0">Compliance by Brand</h3><div className="flex-grow flex items-center justify-center"><ComplianceByBrandChart data={chartData.byBrand} isLoading={isLoading} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Overall Product Status</h3><div className="flex-grow flex items-center justify-center"><ComplianceChart data={chartData.overall} totalLabel="Products" isLoading={isLoadingOverallStatus} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Product Compliance Rate</h3><div className="flex-grow flex items-center justify-center"><ComplianceRateGauge value={chartData.complianceRate} isLoading={isLoadingComplianceRate} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Country</h3><div className="flex-grow"><ComplianceByCountryChart data={MOCK_COUNTRY_COMPLIANCE_DATA} isLoading={isLoadingByCountry} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliant Trend (6 Months)</h3><div className="flex-grow"><ComplianceTrendChart data={MOCK_TREND_DATA} isLoading={isLoadingTrend} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] md:col-span-2"><h3 className="text-md font-bold mb-2 flex-shrink-0">Compliance by Brand</h3><div className="flex-grow flex items-center justify-center"><ComplianceByBrandChart data={chartData.byBrand} isLoading={isLoadingByBrand} /></div></div>
                             </div>
                         </div>
                     )}

@@ -65,16 +65,6 @@ const getAcronym = (name: string): string => {
     return words.map(word => word[0]).filter(char => char && char.match(/[a-zA-Z]/)).join('').toUpperCase();
 };
 
-const generateRandomizedIngredients = (): Ingredient[] => {
-    const statuses: IngredientStatus[] = ['Compliant', 'Requires Review', 'Non-Compliant', 'Unchecked'];
-    return MOCK_INGREDIENTS.map(ing => ({
-        ...ing,
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        checkedCountries: Math.floor(Math.random() * ing.totalCountries),
-        flaggedCount: Math.floor(Math.random() * 15),
-    }));
-};
-
 const IngredientDashboardPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -85,14 +75,28 @@ const IngredientDashboardPage: React.FC = () => {
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [isIngredientListCollapsed, setIsIngredientListCollapsed] = useState(false);
     const [selectedTypes, setSelectedTypes] = useState<Set<IngredientType>>(new Set());
-    const [isDashboardLoading, setIsDashboardLoading] = useState(true);
     const [ingredientsData, setIngredientsData] = useState<Ingredient[]>(MOCK_INGREDIENTS);
 
+    // Individual loading states for a staggered effect
+    const [isIngredientListLoading, setIsIngredientListLoading] = useState(true);
+    const [isLoadingOverallStatus, setIsLoadingOverallStatus] = useState(true);
+    const [isLoadingComplianceRate, setIsLoadingComplianceRate] = useState(true);
+    const [isLoadingByCountry, setIsLoadingByCountry] = useState(true);
+    const [isLoadingByType, setIsLoadingByType] = useState(true);
+    const [isLoadingTrend, setIsLoadingTrend] = useState(true);
+    const [isLoadingFlagged, setIsLoadingFlagged] = useState(true);
+
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsDashboardLoading(false);
-        }, 1500);
-        return () => clearTimeout(timer);
+        const timers = [
+            setTimeout(() => setIsIngredientListLoading(false), 500),
+            setTimeout(() => setIsLoadingOverallStatus(false), 800),
+            setTimeout(() => setIsLoadingComplianceRate(false), 1000),
+            setTimeout(() => setIsLoadingByCountry(false), 1200),
+            setTimeout(() => setIsLoadingByType(false), 1400),
+            setTimeout(() => setIsLoadingTrend(false), 1600),
+            setTimeout(() => setIsLoadingFlagged(false), 1800),
+        ];
+        return () => timers.forEach(clearTimeout);
     }, []);
     
     const ingredientTypes: IngredientType[] = ['Herbal Extract', 'Mineral Pitch', 'Processed Herb'];
@@ -185,7 +189,7 @@ const IngredientDashboardPage: React.FC = () => {
             </button>
         </div>
         
-        {isDashboardLoading ? <IngredientListSkeleton collapsed={isCollapsed} /> :
+        {isIngredientListLoading ? <IngredientListSkeleton collapsed={isCollapsed} /> :
         isCollapsed ? (
             <div className="flex-grow overflow-y-auto">
                 <ul>
@@ -283,12 +287,12 @@ const IngredientDashboardPage: React.FC = () => {
                     ) : (
                         <div className="h-full overflow-y-auto">
                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Overall Status</h3><div className="flex-grow flex items-center justify-center"><ComplianceChart data={chartData.overall} isLoading={isDashboardLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Compliance Rate</h3><div className="flex-grow flex items-center justify-center"><ComplianceRateGauge value={chartData.complianceRate} isLoading={isDashboardLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Country</h3><div className="flex-grow"><ComplianceByCountryChart data={MOCK_COUNTRY_COMPLIANCE_DATA} isLoading={isDashboardLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Type</h3><div className="flex-grow"><ComplianceByTypeChart data={chartData.byType} isLoading={isDashboardLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliant Trend (6 Months)</h3><div className="flex-grow"><ComplianceTrendChart data={MOCK_TREND_DATA} isLoading={isDashboardLoading} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Top Flagged Ingredients</h3><div className="flex-grow"><FlaggedIngredientsChart ingredients={chartData.flaggedIngredients} isLoading={isDashboardLoading} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Overall Status</h3><div className="flex-grow flex items-center justify-center"><ComplianceChart data={chartData.overall} isLoading={isLoadingOverallStatus} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Compliance Rate</h3><div className="flex-grow flex items-center justify-center"><ComplianceRateGauge value={chartData.complianceRate} isLoading={isLoadingComplianceRate} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Country</h3><div className="flex-grow"><ComplianceByCountryChart data={MOCK_COUNTRY_COMPLIANCE_DATA} isLoading={isLoadingByCountry} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Type</h3><div className="flex-grow"><ComplianceByTypeChart data={chartData.byType} isLoading={isLoadingByType} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliant Trend (6 Months)</h3><div className="flex-grow"><ComplianceTrendChart data={MOCK_TREND_DATA} isLoading={isLoadingTrend} /></div></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Top Flagged Ingredients</h3><div className="flex-grow"><FlaggedIngredientsChart ingredients={chartData.flaggedIngredients} isLoading={isLoadingFlagged} /></div></div>
                             </div>
                         </div>
                     )}
