@@ -33,21 +33,12 @@ export const USERS: User[] = [
 export const MOCK_PRODUCTS: Product[] = [
   // Himalaya Wellness
   { name: 'Liv. 52 DS', company: 'Himalaya Wellness', ingredients: ['Himsra (Capparis spinosa)', 'Kasani (Cichorium intybus)', 'Mandur bhasma', 'Kakamachi (Solanum nigrum)', 'Arjuna (Terminalia arjuna)', 'Licorice (Glycyrrhiza glabra)'], status: 'Non-Compliant' },
-  { name: 'Septilin', company: 'Himalaya Wellness', ingredients: ['Guggulu (Balsamodendron mukul)', 'Guduchi (Tinospora cordifolia)', 'Manjishtha (Rubia cordifolia)', 'Amalaki (Emblica officinalis)', 'Shigru (Moringa pterygosperma)'], status: 'Non-Compliant' },
-  { name: 'Purifying Neem Face Wash', company: 'Himalaya Wellness', ingredients: ['Neem (Azadirachta indica)', 'Turmeric (Curcuma longa)', 'Vetiver (Vetiveria zizanioides)', 'Salicylic Acid'], status: 'Non-Compliant' },
-  
-  // Unilever Icecream (Kwality Wall's)
-  { name: 'Cornetto Double Chocolate', company: 'Unilever Icecream', ingredients: ['Milk Solids', 'Sugar', 'Cocoa Solids', 'Palm Oil', 'Liquid Glucose', 'Emulsifier (471)', 'Stabilisers (410, 412, 407)', 'Wheat Flour', 'Cyclamate (E952)'], status: 'Non-Compliant' },
-  { name: 'Magnum Classic', company: 'Unilever Icecream', ingredients: ['Reconstituted Skimmed Milk', 'Sugar', 'Cocoa Butter', 'Cocoa Mass', 'Coconut Oil', 'Glucose Syrup', 'Whey Solids (Milk)', 'Butteroil (Milk)', 'Emulsifiers (E471, Soya Lecithin, E476)', 'Vanilla Bean Pieces'], status: 'Non-Compliant' },
-
-  // Asian Paints (Treating as chemical products for demo)
-  { name: 'Royale Aspira', company: 'Asian Paints', ingredients: ['Pure Acrylic Polymer Emulsion', 'Titanium Dioxide', 'Crystalline Silica', 'Propylene Glycol', 'Fungicides', 'Water', 'Lead Carbonate'], status: 'Non-Compliant' },
-  { name: 'Tractor Emulsion', company: 'Asian Paints', ingredients: ['Styrene Acrylic Emulsion', 'Titanium Dioxide', 'Calcium Carbonate', 'Kaolin', 'Biocides'], status: 'Non-Compliant' },
-
-  // Dabur
-  { name: 'Dabur Chyawanprash', company: 'Dabur', ingredients: ['Amla (Emblica officinalis)', 'Ashwagandha (Withania somnifera)', 'Pippali (Piper longum)', 'Shatavari (Asparagus racemosus)', 'Bilva (Aegle marmelos)', 'Ghee', 'Honey', 'Ephedra (Ma Huang)'], status: 'Non-Compliant' },
-  { name: 'Dabur Honey', company: 'Dabur', ingredients: ['Honey'], status: 'Compliant' },
-  { name: 'Pudin Hara Pearls', company: 'Dabur', ingredients: ['Mentha Piperita (Pudina Satva)', 'Mentha Spicata (Pudina Satva)'], status: 'Non-Compliant' }
+  { name: 'Septilin', company: 'Himalaya Wellness', ingredients: ['Guggulu (Balsamodendron mukul)', 'Guduchi (Tinospora cordifolia)', 'Manjishtha (Rubia cordifolia)', 'Amalaki (Emblica officinalis)', 'Shigru (Moringa pterygosperma)'], status: 'Requires Review' },
+  { name: 'Purifying Neem Face Wash', company: 'Himalaya Wellness', ingredients: ['Neem (Azadirachta indica)', 'Turmeric (Curcuma longa)', 'Vetiver (Vetiveria zizanioides)', 'Salicylic Acid'], status: 'Compliant' },
+  { name: 'Cystone', company: 'Himalaya Wellness', ingredients: ['Shilapushpa (Didymocarpus pedicellata)', 'Pasanabheda (Saxifraga ligulata)', 'Gokshura (Tribulus terrestris)'], status: 'Compliant' },
+  { name: 'Gasex Tablet', company: 'Himalaya Wellness', ingredients: ['Sunthi (Zingiber officinale)', 'Triphala', 'Vidanga (Embelia ribes)'], status: 'Requires Review' },
+  { name: 'Rumalaya Forte', company: 'Himalaya Wellness', ingredients: ['Shallaki (Boswellia serrata)', 'Guggul (Commiphora wightii)'], status: 'Non-Compliant' },
+  { name: 'Mentat', company: 'Himalaya Wellness', ingredients: ['Brahmi (Bacopa monnieri)', 'Ashwagandha (Withania somnifera)', 'Mandukaparni (Centella asiatica)'], status: 'Compliant' },
 ];
 
 export const MOCK_REGULATORY_DOCUMENTS: RegulatoryDocument[] = [

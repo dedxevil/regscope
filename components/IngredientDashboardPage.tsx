@@ -1,18 +1,27 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { COUNTRIES, MOCK_INGREDIENTS, MOCK_TREND_DATA } from '../constants';
+import type { Country, Ingredient, IngredientType } from '../types';
 import Spinner from './Spinner';
-import DetailedReport from './DetailedReport';
-import ComplianceChart from './ComplianceChart';
-import ComplianceByCountryChart from './ComplianceByCountryChart';
-import ComplianceByTypeChart from './ComplianceByTypeChart';
+import { fetchSimpleComplianceStatus, fetchIngredientSummary } from '../services/geminiService';
 import ComplianceRateGauge from './ComplianceRateGauge';
-import FlaggedIngredientsChart from './FlaggedIngredientsChart';
 import ComplianceTrendChart from './ComplianceTrendChart';
-import { MOCK_INGREDIENTS, COUNTRIES, MOCK_COUNTRY_COMPLIANCE_DATA, MOCK_TREND_DATA } from '../constants';
-import { fetchSimpleComplianceStatus, fetchComplianceInfo } from '../services/geminiService';
-import type { Ingredient, Country, CountryComplianceStatus, ComplianceStatus, IngredientType, IngredientStatus } from '../types';
-import IngredientListSkeleton from './skeletons/IngredientListSkeleton';
+import TopIngredientsChart from './TopIngredientsChart';
+import TopCountriesChart from './TopCountriesChart';
+import ComplianceChart from './ComplianceChart';
+import FlaggedIngredientsChart from './FlaggedIngredientsChart';
+import ComplianceByTypeChart from './ComplianceByTypeChart';
+import type { CountryComplianceStatus, ComplianceStatus } from '../types';
+import IngredientReportModal from './IngredientReportModal'; // New Import
+import IngredientIcon from './IngredientIcon';
+import CountryIcon from './CountryIcon';
+
+// --- ICONS ---
+const SearchIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>);
+const ClearIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>);
+const ChevronDownIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>);
 
 
+// --- LOCAL TYPES & HELPERS ---
 const statusStyles: Record<ComplianceStatus, string> = {
     'Compliant': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     'Non-Compliant': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
@@ -20,285 +29,281 @@ const statusStyles: Record<ComplianceStatus, string> = {
     'Error': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
 };
 
-const typeColorMap: Record<IngredientType, { border: string, text: string, bg: string }> = {
-    'Herbal Extract': { border: 'border-teal-500', text: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-100 dark:bg-teal-900' },
-    'Mineral Pitch': { border: 'border-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900' },
-    'Processed Herb': { border: 'border-sky-500', text: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900' }
+const parseMarkdown = (text: string | null): string => {
+    if (!text) return '';
+    return text.trim()
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br />');
 };
 
-const typeColorStyles: Record<IngredientType, {
-    selected: string;
-    unselected: string;
-    badge: string;
-    selectedBadge: string;
-}> = {
-    'Herbal Extract': {
-        selected: 'bg-teal-500 border-teal-500 text-white',
-        unselected: 'border-teal-500/50 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/50',
-        badge: 'bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300',
-        selectedBadge: 'bg-white/30 text-white'
-    },
-    'Mineral Pitch': {
-        selected: 'bg-amber-500 border-amber-500 text-white',
-        unselected: 'border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/50',
-        badge: 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
-        selectedBadge: 'bg-white/30 text-white'
-    },
-    'Processed Herb': {
-        selected: 'bg-sky-500 border-sky-500 text-white',
-        unselected: 'border-sky-500/50 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/50',
-        badge: 'bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300',
-        selectedBadge: 'bg-white/30 text-white'
-    }
-};
-
-const SearchIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>);
-const CollapseLeftIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>);
-const ExpandRightIcon: React.FC<{className?: string}> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>);
-const BackIcon: React.FC<{className?: string}> = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>);
-
-const getAcronym = (name: string): string => {
-    if (!name) return '';
-    const simpleName = name.replace(/ \([^)]*\)/g, "");
-    const words = simpleName.split(/\s+/).filter(Boolean);
-    if (words.length === 1) return (words[0].length > 2 ? words[0].substring(0, 2) : words[0]).toUpperCase();
-    return words.map(word => word[0]).filter(char => char && char.match(/[a-zA-Z]/)).join('').toUpperCase();
-};
-
-const IngredientDashboardPage: React.FC = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
-    const [complianceResults, setComplianceResults] = useState<CountryComplianceStatus[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-    const [detailedReport, setDetailedReport] = useState<string | null>(null);
-    const [isDetailLoading, setIsDetailLoading] = useState(false);
-    const [isIngredientListCollapsed, setIsIngredientListCollapsed] = useState(false);
-    const [selectedTypes, setSelectedTypes] = useState<Set<IngredientType>>(new Set());
-    const [ingredientsData, setIngredientsData] = useState<Ingredient[]>(MOCK_INGREDIENTS);
-
-    // Individual loading states for a staggered effect
-    const [isIngredientListLoading, setIsIngredientListLoading] = useState(true);
-    const [isLoadingOverallStatus, setIsLoadingOverallStatus] = useState(true);
-    const [isLoadingComplianceRate, setIsLoadingComplianceRate] = useState(true);
-    const [isLoadingByCountry, setIsLoadingByCountry] = useState(true);
-    const [isLoadingByType, setIsLoadingByType] = useState(true);
-    const [isLoadingTrend, setIsLoadingTrend] = useState(true);
-    const [isLoadingFlagged, setIsLoadingFlagged] = useState(true);
+// --- SEARCH CONTROLS COMPONENT ---
+interface IngredientSearchControlsProps {
+    onIngredientSelect: (ingredient: Ingredient | null) => void;
+    onCountrySelect: (country: Country | null) => void;
+}
+const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onIngredientSelect, onCountrySelect }) => {
+    const [ingredientQuery, setIngredientQuery] = useState('');
+    const [selectedCountryCode, setSelectedCountryCode] = useState<string>('');
+    const [isListVisible, setIsListVisible] = useState(false);
+    const searchWrapperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const timers = [
-            setTimeout(() => setIsIngredientListLoading(false), 500),
-            setTimeout(() => setIsLoadingOverallStatus(false), 800),
-            setTimeout(() => setIsLoadingComplianceRate(false), 1000),
-            setTimeout(() => setIsLoadingByCountry(false), 1200),
-            setTimeout(() => setIsLoadingByType(false), 1400),
-            setTimeout(() => setIsLoadingTrend(false), 1600),
-            setTimeout(() => setIsLoadingFlagged(false), 1800),
-        ];
-        return () => timers.forEach(clearTimeout);
-    }, []);
-    
-    const ingredientTypes: IngredientType[] = ['Herbal Extract', 'Mineral Pitch', 'Processed Herb'];
-
-    const handleTypeToggle = (type: IngredientType) => {
-        setSelectedTypes(prev => {
-            const newSet = new Set(prev);
-            newSet.has(type) ? newSet.delete(type) : newSet.add(type);
-            return newSet;
-        });
-    };
-    
-    const ingredientTypeCounts = useMemo(() => {
-        const counts: Record<IngredientType, number> = {
-            'Herbal Extract': 0,
-            'Mineral Pitch': 0,
-            'Processed Herb': 0,
-        };
-        ingredientsData.forEach(ing => {
-            if (ing.type in counts) {
-                counts[ing.type]++;
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target as Node)) {
+                setIsListVisible(false);
             }
-        });
-        return counts;
-    }, [ingredientsData]);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const filteredIngredients = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        let ingredients = ingredientsData;
-        if (selectedTypes.size > 0) ingredients = ingredients.filter(i => selectedTypes.has(i.type));
-        if (query) ingredients = ingredients.filter(i => i.name.toLowerCase().includes(query));
-        return ingredients;
-    }, [searchQuery, selectedTypes, ingredientsData]);
+        if (!ingredientQuery.trim()) return MOCK_INGREDIENTS;
+        return MOCK_INGREDIENTS.filter(i => i.name.toLowerCase().includes(ingredientQuery.toLowerCase()));
+    }, [ingredientQuery]);
 
-    const chartData = useMemo(() => {
-        const compliantCount = ingredientsData.filter(i => i.status === 'Compliant').length;
-        const complianceRate = ingredientsData.length > 0 ? (compliantCount / ingredientsData.length) * 100 : 0;
-        
+    const handleIngredientSelect = (ingredient: Ingredient) => {
+        setIngredientQuery(ingredient.name);
+        onIngredientSelect(ingredient);
+        setIsListVisible(false);
+    };
+    
+    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const countryCode = e.target.value;
+        setSelectedCountryCode(countryCode);
+        const country = COUNTRIES.find(c => c.code === countryCode);
+        onCountrySelect(country || null);
+    };
+
+    const handleClearIngredient = () => {
+        setIngredientQuery('');
+        onIngredientSelect(null);
+    }
+
+    return (
+        <div className="bg-white dark:bg-spotify-card p-4 rounded-xl shadow-lg w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative" ref={searchWrapperRef}>
+                    <label htmlFor="ingredient-search" className="block text-sm font-medium text-gray-700 dark:text-spotify-gray mb-1">Ingredient</label>
+                    <div className="relative">
+                        <IngredientIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-spotify-gray" />
+                        <input id="ingredient-search" type="text" value={ingredientQuery} onChange={e => setIngredientQuery(e.target.value)} onFocus={() => setIsListVisible(true)} placeholder="Search or select an ingredient..." className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" autoComplete="off" />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+                            {ingredientQuery && <button onClick={handleClearIngredient} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ClearIcon className="w-4 h-4"/></button>}
+                            <ChevronDownIcon className="w-5 h-5 text-gray-400 pointer-events-none"/>
+                        </div>
+                    </div>
+                    {isListVisible && (
+                        <ul className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-spotify-light-dark border dark:border-gray-700 rounded-md shadow-lg z-20 text-left max-h-60 overflow-y-auto">
+                            {filteredIngredients.length > 0 ? filteredIngredients.map(i => (<li key={i.id} onClick={() => handleIngredientSelect(i)} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"><span className="font-medium">{i.name}</span></li>))
+                            : <li className="px-4 py-2 text-gray-500">No ingredients found</li>}
+                        </ul>
+                    )}
+                </div>
+                <div className="relative">
+                    <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 dark:text-spotify-gray mb-1">Country</label>
+                    <CountryIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-spotify-gray mt-3 pointer-events-none" />
+                    <select id="country-select" value={selectedCountryCode} onChange={handleCountryChange} className="w-full appearance-none pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green">
+                        <option value="">Select a country...</option>
+                        {COUNTRIES.map(c => (<option key={c.code} value={c.code}>{c.name}</option>))}
+                    </select>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- MAIN PAGE COMPONENT ---
+const IngredientDashboardPage: React.FC = () => {
+    const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+
+    const [complianceResults, setComplianceResults] = useState<CountryComplianceStatus[]>([]);
+    const [ingredientSummary, setIngredientSummary] = useState<string | null>(null);
+    const [isComplianceLoading, setIsComplianceLoading] = useState(false);
+    const [viewingReportForCountry, setViewingReportForCountry] = useState<Country | null>(null);
+
+    const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+
+    useEffect(() => {
+        setIsLoadingDashboard(true);
+        const timer = setTimeout(() => setIsLoadingDashboard(false), 1000);
+        return () => clearTimeout(timer);
+    }, [selectedCountry, selectedIngredient]);
+    
+    const countryDashboardData = useMemo(() => {
+        if (!selectedCountry) return null;
+        const seed = selectedCountry.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const topIngredients = [...MOCK_INGREDIENTS].sort((a, b) => (a.name.length * seed) % 50 - (b.name.length * seed) % 50).slice(0, 5).map((p, i) => ({ name: p.name, value: 10 + ((seed * (i + 1) * p.name.length) % 25) })).sort((a, b) => b.value - a.value);
+        const ingredientTypes: IngredientType[] = ['Herbal Extract', 'Mineral Pitch', 'Processed Herb'];
+
         return {
-            overall: ingredientsData.map(i => ({ status: i.status })),
-            byType: ingredientTypes.map(type => ({
+            complianceRate: 60 + (seed % 35),
+            trendData: MOCK_TREND_DATA.map(d => ({ ...d, nonCompliant: Math.max(0, d.nonCompliant + (seed % 5) - 2) })),
+            topIngredients,
+            overallStatusData: MOCK_INGREDIENTS.map(p => ({ status: p.status })),
+            topFlaggedIngredients: MOCK_INGREDIENTS,
+            complianceByType: ingredientTypes.map(type => ({
                 type,
-                compliant: ingredientsData.filter(i => i.type === type && i.status === 'Compliant').length,
-                nonCompliant: ingredientsData.filter(i => i.type === type && i.status === 'Non-Compliant').length,
-                review: ingredientsData.filter(i => i.type === type && i.status === 'Requires Review').length,
-            })),
-            complianceRate,
-            flaggedIngredients: [...ingredientsData].sort((a, b) => b.flaggedCount - a.flaggedCount).slice(0, 10),
+                compliant: MOCK_INGREDIENTS.filter(i => i.type === type && i.status === 'Compliant').length + (seed % 5),
+                nonCompliant: MOCK_INGREDIENTS.filter(i => i.type === type && i.status === 'Non-Compliant').length + (seed % 3),
+                review: MOCK_INGREDIENTS.filter(i => i.type === type && i.status === 'Requires Review').length + (seed % 4),
+            }))
         };
-    }, [ingredientsData]);
+    }, [selectedCountry]);
 
-    const handleSelectIngredient = useCallback(async (ingredient: Ingredient) => {
-        if (selectedIngredient?.id === ingredient.id && !isLoading) return;
-        setIsLoading(true);
-        setSelectedIngredient(ingredient);
-        setSelectedCountry(null);
-        setDetailedReport(null);
+    const handleFetchIngredientDetails = useCallback(async (ingredient: Ingredient) => {
+        setIsComplianceLoading(true);
         setComplianceResults([]);
+        setIngredientSummary(null);
 
-        const complianceResultsSettled = await Promise.allSettled(COUNTRIES.map(c => fetchSimpleComplianceStatus(ingredient.name, c.name)));
+        const [summaryResult, complianceResultsSettled] = await Promise.all([
+            fetchIngredientSummary(ingredient.name),
+            Promise.allSettled(COUNTRIES.map(c => fetchSimpleComplianceStatus(ingredient.name, c.name)))
+        ]);
+
+        setIngredientSummary(summaryResult);
+
         setComplianceResults(complianceResultsSettled.map((res, i) => ({
             country: COUNTRIES[i],
             status: res.status === 'fulfilled' ? res.value : 'Error'
         })));
-        
-        setIsLoading(false);
-    }, [selectedIngredient, isLoading]);
+        setIsComplianceLoading(false);
+    }, []);
     
-    const handleCountrySelect = useCallback(async (country: Country) => {
-        if (!selectedIngredient) return;
-        setSelectedCountry(country);
-        setIsDetailLoading(true);
-        setDetailedReport(null);
-        try {
-            const report = await fetchComplianceInfo(selectedIngredient.name, country.name);
-            setDetailedReport(report);
-        } catch (e) {
-            setDetailedReport("Failed to load detailed report.");
-        } finally {
-            setIsDetailLoading(false);
-        }
-    }, [selectedIngredient]);
+    const ingredientChartData = useMemo(() => {
+        if (!selectedIngredient || !complianceResults.length) return null;
 
-    const IngredientListPanel = ({ isCollapsed }: { isCollapsed: boolean }) => (
-      <>
-        <div className={`p-4 border-b dark:border-gray-700 flex items-center justify-between flex-shrink-0`}>
-            {!isCollapsed && <h2 className="text-lg font-bold">Ingredients</h2>}
-            <button onClick={() => setIsIngredientListCollapsed(!isCollapsed)} className="p-1 text-gray-500 hover:text-gray-800 dark:text-spotify-gray dark:hover:text-white" title={isCollapsed ? 'Expand' : 'Collapse'}>
-                {isCollapsed ? <ExpandRightIcon className="w-6 h-6" /> : <CollapseLeftIcon className="w-6 h-6" />}
-            </button>
-        </div>
-        
-        {isIngredientListLoading ? <IngredientListSkeleton collapsed={isCollapsed} /> :
-        isCollapsed ? (
-            <div className="flex-grow overflow-y-auto">
-                <ul>
-                    {filteredIngredients.map(ing => (
-                        <li key={ing.id} onClick={() => handleSelectIngredient(ing)} title={ing.name} className={`h-12 flex items-center justify-center cursor-pointer border-l-4 ${selectedIngredient?.id === ing.id ? typeColorMap[ing.type].border : 'border-transparent'} ${selectedIngredient?.id === ing.id ? typeColorMap[ing.type].bg : 'hover:bg-gray-50 dark:hover:bg-spotify-light-dark/50'} `}>
-                            <span className={`font-bold text-xs ${typeColorMap[ing.type].text}`}>{getAcronym(ing.name)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        ) : (
-            <>
-                <div className="p-4 border-b dark:border-gray-700">
-                    <p className="text-sm font-semibold mb-2 text-gray-700 dark:text-spotify-gray">Filter by Type</p>
-                    <div className="flex flex-wrap gap-2">
-                        {ingredientTypes.map(type => {
-                            const isSelected = selectedTypes.has(type);
-                            const styles = typeColorStyles[type];
-                            return (
-                                <button 
-                                    key={type} 
-                                    onClick={() => handleTypeToggle(type)} 
-                                    className={`flex items-center px-2 py-1 text-xs font-semibold rounded-full border transition-colors duration-200 ${isSelected ? styles.selected : styles.unselected}`}
-                                >
-                                    {type}
-                                    <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-semibold ${isSelected ? styles.selectedBadge : styles.badge}`}>
-                                        {ingredientTypeCounts[type]}
-                                    </span>
-                                </button>
-                            );
-                        })}
+        const flaggedCountries = complianceResults
+            .map(({ country, status }) => {
+                let score = 0;
+                if (status === 'Non-Compliant') score = Math.random() * 40 + 60; // 60-100
+                else if (status === 'Requires Review') score = Math.random() * 30 + 30; // 30-60
+                else if (status === 'Compliant') score = Math.random() * 30; // 0-30
+                return { name: country.name, value: Math.round(score) };
+            })
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 5);
+
+        const seed = selectedIngredient.name.length;
+        const trendData = MOCK_TREND_DATA.map(d => ({
+            ...d,
+            nonCompliant: Math.max(0, d.nonCompliant - 5 + (seed % 5) - (d.month.length % 3))
+        }));
+
+        return { flaggedCountries, trendData };
+    }, [selectedIngredient, complianceResults]);
+
+
+    useEffect(() => {
+        if (selectedIngredient) {
+            handleFetchIngredientDetails(selectedIngredient);
+        }
+    }, [selectedIngredient, handleFetchIngredientDetails]);
+
+    useEffect(() => {
+        if (selectedIngredient && selectedCountry) {
+            setViewingReportForCountry(selectedCountry);
+        }
+    }, [selectedIngredient, selectedCountry]);
+
+    // FIX: Add logic to close modal when ingredient or country is deselected
+    useEffect(() => {
+        if (!selectedIngredient || !selectedCountry) {
+            setViewingReportForCountry(null);
+        }
+    }, [selectedIngredient, selectedCountry]);
+
+
+    const renderContent = () => {
+        if (!selectedCountry && !selectedIngredient) {
+            return (
+                <div className="flex-grow flex items-center justify-center text-center p-4">
+                    <div>
+                        <IngredientIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
+                        <h2 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Ingredient & Country Dashboard</h2>
+                        <p className="mt-1 text-gray-500 dark:text-gray-400">Select an ingredient and/or a country to begin.</p>
                     </div>
                 </div>
-                <div className="p-4 border-b dark:border-gray-700">
-                    <div className="relative"><SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-spotify-gray" /><input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" /></div>
-                </div>
+            );
+        }
+
+        if (selectedCountry && !selectedIngredient) {
+            return (
                 <div className="flex-grow overflow-y-auto">
-                    <ul>
-                        {filteredIngredients.map(ing => (
-                            <li key={ing.id} onClick={() => handleSelectIngredient(ing)} className={`px-4 py-3 cursor-pointer border-l-4 ${selectedIngredient?.id === ing.id ? typeColorMap[ing.type].border + ' bg-gray-100 dark:bg-spotify-light-dark' : 'border-transparent hover:bg-gray-50 dark:hover:bg-spotify-light-dark/50'}`}>
-                                <p className="font-semibold text-gray-800 dark:text-gray-100">{ing.name}</p>
-                                <p className={`text-sm ${typeColorMap[ing.type].text}`}>{ing.type}</p>
-                            </li>
-                        ))}
-                    </ul>
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+                        Compliance Dashboard for {selectedCountry.name}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><ComplianceRateGauge value={countryDashboardData.complianceRate} isLoading={isLoadingDashboard} /></div>
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><TopIngredientsChart data={countryDashboardData.topIngredients} isLoading={isLoadingDashboard} title={`Top 5 Flagged Ingredients`} /></div>
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><ComplianceChart data={countryDashboardData.overallStatusData} isLoading={isLoadingDashboard} /></div>
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><ComplianceTrendChart data={countryDashboardData.trendData} isLoading={isLoadingDashboard} /></div>
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><FlaggedIngredientsChart ingredients={countryDashboardData.topFlaggedIngredients} isLoading={isLoadingDashboard} /></div>
+                         <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px]"><ComplianceByTypeChart data={countryDashboardData.complianceByType} isLoading={isLoadingDashboard} /></div>
+                    </div>
                 </div>
-            </>
-        )}
-      </>
-    );
+            );
+        }
 
-    return (
-        <div className="h-full flex flex-col">
-            <main className="flex-grow p-2 md:p-4 flex gap-2 md:gap-4 min-h-0 relative">
-                
-                {/* Desktop Sidebar */}
-                <div className={`hidden md:flex flex-shrink-0 bg-white dark:bg-spotify-card rounded-lg shadow-md flex-col transition-all duration-300 ${isIngredientListCollapsed ? 'w-16' : 'w-full md:w-1/3 lg:w-1/4'}`}>
-                    <IngredientListPanel isCollapsed={isIngredientListCollapsed} />
-                </div>
-                
-                <div className="flex-grow flex flex-col gap-4 min-w-0">
-                    {selectedIngredient ? (
-                        <div className="flex flex-col gap-4 h-full">
-                          <div className="flex-shrink-0">
-                               <button onClick={() => setSelectedIngredient(null)} className="flex items-center text-sm font-medium text-gray-600 dark:text-spotify-gray hover:text-gray-900 dark:hover:text-white bg-white dark:bg-spotify-card px-3 py-2 rounded-lg shadow-md">
-                                   <BackIcon className="w-5 h-5 mr-2" />
-                                   Back to Dashboard
-                               </button>
-                           </div>
-                           
-                           <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex-shrink-0">
-                               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{selectedIngredient.name}</h2>
-                               <p className="mt-1 text-sm text-gray-600 dark:text-spotify-gray">{selectedIngredient.description}</p>
-                           </div>
-
-                           <div className="flex-grow min-h-0">
-                                {isLoading ? (
+        if (selectedIngredient) {
+             return (
+                <div className="flex flex-col gap-4 h-full flex-grow min-h-0">
+                    <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex-shrink-0">
+                       <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{selectedIngredient.name}</h2>
+                       <p className="mt-1 text-sm text-gray-600 dark:text-spotify-gray">{selectedIngredient.description}</p>
+                    </div>
+                    <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
+                        <div className="bg-white dark:bg-spotify-card rounded-lg shadow-md flex flex-col lg:col-span-1">
+                            <h3 className="text-lg font-bold p-4 flex-shrink-0">Country Compliance</h3>
+                            <div className="flex-grow overflow-y-auto border-t dark:border-gray-700">
+                                {isComplianceLoading ? (
                                     <div className="flex h-full w-full items-center justify-center"><Spinner className="h-8 w-8 text-spotify-green" /></div>
                                 ) : (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                                       <div className="bg-white dark:bg-spotify-card rounded-lg shadow-md flex flex-col min-h-0">
-                                            <h3 className="text-lg font-bold p-4 flex-shrink-0">Country Compliance</h3>
-                                            <div className="flex-grow overflow-y-auto border-t dark:border-gray-700">
-                                                <table className="w-full text-left"><tbody>{complianceResults.map(({country, status}) => (<tr key={country.code} onClick={() => handleCountrySelect(country)} className={`cursor-pointer ${selectedCountry?.code === country.code ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-spotify-light-dark'}`}><td className="p-3 flex items-center text-gray-800 dark:text-gray-200"><img src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`} alt={`${country.name} flag`} className="w-5 h-auto mr-2"/>{country.name}</td><td className="p-3 text-right"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[status]}`}>{status}</span></td></tr>))}</tbody></table>
-                                            </div>
-                                       </div>
-                                       <div className="bg-white dark:bg-spotify-card rounded-lg shadow-md flex flex-col min-h-0">
-                                           <h3 className="text-lg font-bold p-4 flex-shrink-0">{selectedCountry ? `Detailed Report: ${selectedCountry.name}` : 'Detailed Report'}</h3>
-                                           <div className="flex-grow overflow-y-auto border-t dark:border-gray-700 p-3"><DetailedReport isLoading={isDetailLoading} report={detailedReport} defaultText={selectedCountry ? 'Loading...' : 'Select a country to view its detailed report.'}/></div>
-                                       </div>
-                                   </div>
+                                    <table className="w-full text-left">
+                                        <tbody>
+                                            {complianceResults.map(({country, status}) => (<tr key={country.code} onClick={() => setViewingReportForCountry(country)} className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-spotify-light-dark`}><td className="p-3 flex items-center text-gray-800 dark:text-gray-200"><img src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`} alt={`${country.name} flag`} className="w-5 h-auto mr-2"/>{country.name}</td><td className="p-3 text-right"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[status]}`}>{status}</span></td></tr>))}
+                                        </tbody>
+                                    </table>
                                 )}
-                           </div>
-                        </div>
-                    ) : (
-                        <div className="h-full overflow-y-auto">
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Overall Status</h3><div className="flex-grow flex items-center justify-center"><ComplianceChart data={chartData.overall} isLoading={isLoadingOverallStatus} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Compliance Rate</h3><div className="flex-grow flex items-center justify-center"><ComplianceRateGauge value={chartData.complianceRate} isLoading={isLoadingComplianceRate} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Country</h3><div className="flex-grow"><ComplianceByCountryChart data={MOCK_COUNTRY_COMPLIANCE_DATA} isLoading={isLoadingByCountry} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">By Type</h3><div className="flex-grow"><ComplianceByTypeChart data={chartData.byType} isLoading={isLoadingByType} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliant Trend (6 Months)</h3><div className="flex-grow"><ComplianceTrendChart data={MOCK_TREND_DATA} isLoading={isLoadingTrend} /></div></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[300px] xl:min-h-0"><h3 className="text-md font-bold mb-2 flex-shrink-0">Top Flagged Ingredients</h3><div className="flex-grow"><FlaggedIngredientsChart ingredients={chartData.flaggedIngredients} isLoading={isLoadingFlagged} /></div></div>
                             </div>
-                        </div>
-                    )}
+                       </div>
+                       <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Global Compliance Status</h3><ComplianceChart data={complianceResults} totalLabel="Countries" isLoading={isComplianceLoading} /></div>
+                            <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Non-Compliance Trend</h3><ComplianceTrendChart data={ingredientChartData?.trendData || []} isLoading={isComplianceLoading} /></div>
+                            <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Top 5 Flagged Countries</h3><TopCountriesChart data={ingredientChartData?.flaggedCountries || []} isLoading={isComplianceLoading} title="" /></div>
+                            <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">AI Summary</h3>
+                                <div className="flex-grow overflow-y-auto">
+                                    {isComplianceLoading ? <div className="flex h-full w-full items-center justify-center"><Spinner className="h-6 w-6 text-spotify-green" /></div> : <div className="prose prose-sm max-w-none text-gray-600 dark:text-spotify-gray" dangerouslySetInnerHTML={{ __html: parseMarkdown(ingredientSummary) }} />}
+                                </div>
+                            </div>
+                       </div>
+                   </div>
                 </div>
-            </main>
-        </div>
+            );
+        }
+        return null; // Should not be reached
+    };
+
+    return (
+        <>
+            <div className="h-full flex flex-col p-2 md:p-4 gap-4">
+                <div className="flex-shrink-0">
+                    <IngredientSearchControls 
+                        onIngredientSelect={setSelectedIngredient}
+                        onCountrySelect={setSelectedCountry}
+                    />
+                </div>
+                {renderContent()}
+            </div>
+            {viewingReportForCountry && selectedIngredient && (
+                <IngredientReportModal
+                    ingredient={selectedIngredient}
+                    country={viewingReportForCountry}
+                    onClose={() => setViewingReportForCountry(null)}
+                />
+            )}
+        </>
     );
 };
 

@@ -24,6 +24,7 @@ export interface Product {
   name: string;
   company: 'Himalaya Wellness' | 'Unilever Icecream' | 'Asian Paints' | 'Dabur';
   ingredients: string[];
+  status: 'Compliant' | 'Non-Compliant' | 'Requires Review';
 }
 
 export interface ComplianceResult {
@@ -114,4 +115,4 @@ export interface Run {
 }
 
 // --- App Navigation Types ---
-export type AppView = 'dashboard' | 'product_search' | 'library' | 'settings';
+export type AppView = 'ingredient_dashboard' | 'product_dashboard' | 'regulatory_documents' | 'settings';
