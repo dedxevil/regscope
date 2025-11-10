@@ -38,11 +38,14 @@ const parseMarkdown = (text: string | null): string => {
 
 // --- SEARCH CONTROLS COMPONENT ---
 interface IngredientSearchControlsProps {
+    ingredientQuery: string;
+    onQueryChange: (query: string) => void;
     onIngredientSelect: (ingredient: Ingredient | null) => void;
     onCountrySelect: (country: Country | null) => void;
+    recentlyViewed: Ingredient[];
+    onRecentClick: (ingredient: Ingredient) => void;
 }
-const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onIngredientSelect, onCountrySelect }) => {
-    const [ingredientQuery, setIngredientQuery] = useState('');
+const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ ingredientQuery, onQueryChange, onIngredientSelect, onCountrySelect, recentlyViewed, onRecentClick }) => {
     const [selectedCountryCode, setSelectedCountryCode] = useState<string>('');
     const [isListVisible, setIsListVisible] = useState(false);
     const searchWrapperRef = useRef<HTMLDivElement>(null);
@@ -63,7 +66,7 @@ const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onI
     }, [ingredientQuery]);
 
     const handleIngredientSelect = (ingredient: Ingredient) => {
-        setIngredientQuery(ingredient.name);
+        onQueryChange(ingredient.name);
         onIngredientSelect(ingredient);
         setIsListVisible(false);
     };
@@ -76,7 +79,7 @@ const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onI
     };
 
     const handleClearIngredient = () => {
-        setIngredientQuery('');
+        onQueryChange('');
         onIngredientSelect(null);
     }
 
@@ -87,7 +90,7 @@ const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onI
                     <label htmlFor="ingredient-search" className="block text-sm font-medium text-gray-700 dark:text-spotify-gray mb-1">Ingredient</label>
                     <div className="relative">
                         <IngredientIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-spotify-gray" />
-                        <input id="ingredient-search" type="text" value={ingredientQuery} onChange={e => setIngredientQuery(e.target.value)} onFocus={() => setIsListVisible(true)} placeholder="Search or select an ingredient..." className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" autoComplete="off" />
+                        <input id="ingredient-search" type="text" value={ingredientQuery} onChange={e => onQueryChange(e.target.value)} onFocus={() => setIsListVisible(true)} placeholder="Search or select an ingredient..." className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" autoComplete="off" />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                             {ingredientQuery && <button onClick={handleClearIngredient} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ClearIcon className="w-4 h-4"/></button>}
                             <ChevronDownIcon className="w-5 h-5 text-gray-400 pointer-events-none"/>
@@ -109,6 +112,22 @@ const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onI
                     </select>
                 </div>
             </div>
+            {recentlyViewed.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-spotify-gray mb-2 uppercase tracking-wider">Recently Viewed</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {recentlyViewed.map(ingredient => (
+                            <button
+                                key={ingredient.id}
+                                onClick={() => onRecentClick(ingredient)}
+                                className="px-3 py-1 text-sm bg-gray-100 dark:bg-spotify-light-dark text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                {ingredient.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -117,6 +136,8 @@ const IngredientSearchControls: React.FC<IngredientSearchControlsProps> = ({ onI
 const IngredientDashboardPage: React.FC = () => {
     const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [ingredientQuery, setIngredientQuery] = useState('');
+    const [recentlyViewed, setRecentlyViewed] = useState<Ingredient[]>([]);
 
     const [complianceResults, setComplianceResults] = useState<CountryComplianceStatus[]>([]);
     const [ingredientSummary, setIngredientSummary] = useState<string | null>(null);
@@ -124,6 +145,19 @@ const IngredientDashboardPage: React.FC = () => {
     const [viewingReportForCountry, setViewingReportForCountry] = useState<Country | null>(null);
 
     const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+
+    const addRecentlyViewed = useCallback((ingredient: Ingredient) => {
+        setRecentlyViewed(prev => {
+            const newList = [ingredient, ...prev.filter(i => i.id !== ingredient.id)];
+            return newList.slice(0, 5); // Keep max 5
+        });
+    }, []);
+
+    useEffect(() => {
+        if (selectedIngredient) {
+            addRecentlyViewed(selectedIngredient);
+        }
+    }, [selectedIngredient, addRecentlyViewed]);
 
     useEffect(() => {
         setIsLoadingDashboard(true);
@@ -207,12 +241,23 @@ const IngredientDashboardPage: React.FC = () => {
         }
     }, [selectedIngredient, selectedCountry]);
 
-    // FIX: Add logic to close modal when ingredient or country is deselected
     useEffect(() => {
         if (!selectedIngredient || !selectedCountry) {
             setViewingReportForCountry(null);
         }
     }, [selectedIngredient, selectedCountry]);
+
+    const handleQueryChange = (query: string) => {
+        setIngredientQuery(query);
+        if (!query) {
+            setSelectedIngredient(null);
+        }
+    };
+
+    const handleRecentClick = (ingredient: Ingredient) => {
+        setIngredientQuery(ingredient.name);
+        setSelectedIngredient(ingredient);
+    };
 
 
     const renderContent = () => {
@@ -290,8 +335,12 @@ const IngredientDashboardPage: React.FC = () => {
             <div className="h-full flex flex-col p-2 md:p-4 gap-4">
                 <div className="flex-shrink-0">
                     <IngredientSearchControls 
+                        ingredientQuery={ingredientQuery}
+                        onQueryChange={handleQueryChange}
                         onIngredientSelect={setSelectedIngredient}
                         onCountrySelect={setSelectedCountry}
+                        recentlyViewed={recentlyViewed}
+                        onRecentClick={handleRecentClick}
                     />
                 </div>
                 {renderContent()}

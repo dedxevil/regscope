@@ -20,7 +20,7 @@ const App: React.FC = () => {
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentView, setCurrentView] = useState<AppView>('ingredient_dashboard');
+  const [currentView, setCurrentView] = useState<AppView>('product_dashboard');
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -35,7 +35,7 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
-    setCurrentView('ingredient_dashboard');
+    setCurrentView('product_dashboard');
   };
 
   const handleLogout = () => {
@@ -60,7 +60,7 @@ const App: React.FC = () => {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <IngredientDashboardPage />;
+        return <ProductDashboardPage />;
     }
   };
 

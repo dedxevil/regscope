@@ -12,9 +12,9 @@ interface IngredientCompositionChartProps {
 }
 
 const TYPE_COLORS: Record<Ingredient['type'], string> = {
-    'Herbal Extract': '#1DB954', // Green
-    'Mineral Pitch': '#F59E0B', // Amber
-    'Processed Herb': '#3B82F6', // Blue
+    'Herbal Extract': '#ea3788',
+    'Mineral Pitch': '#5158bb',
+    'Processed Herb': '#30bcb3',
 };
 
 const IngredientCompositionChart: React.FC<IngredientCompositionChartProps> = ({ data, isLoading }) => {

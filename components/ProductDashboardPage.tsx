@@ -9,7 +9,7 @@ import ComplianceTrendChart from './ComplianceTrendChart';
 import TopProductsChart from './TopProductsChart';
 import IngredientReportModal from './IngredientReportModal';
 import ProductStatusChart from './ProductStatusChart';
-import ComplianceChart from './ComplianceChart';
+import StatusBreakdownBarChart from './StatusBreakdownBarChart';
 import FlaggedIngredientsChart from './FlaggedIngredientsChart';
 import ComplianceByTypeChart from './ComplianceByTypeChart';
 import IngredientCompositionChart from './IngredientCompositionChart';
@@ -47,11 +47,14 @@ const parseReport = (report: string): { status: ReportStatus } => {
 
 // --- SEARCH CONTROLS COMPONENT ---
 interface ProductSearchControlsProps {
+    productQuery: string;
+    onQueryChange: (query: string) => void;
     onProductSelect: (product: Product | null) => void;
     onCountrySelect: (country: Country | null) => void;
+    recentlyViewed: Product[];
+    onRecentClick: (product: Product) => void;
 }
-const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProductSelect, onCountrySelect }) => {
-    const [productQuery, setProductQuery] = useState('');
+const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ productQuery, onQueryChange, onProductSelect, onCountrySelect, recentlyViewed, onRecentClick }) => {
     const [selectedCountryCode, setSelectedCountryCode] = useState<string>('');
     const [isListVisible, setIsListVisible] = useState(false);
     const searchWrapperRef = useRef<HTMLDivElement>(null);
@@ -72,7 +75,7 @@ const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProduct
     }, [productQuery]);
 
     const handleProductSelect = (product: Product) => {
-        setProductQuery(product.name);
+        onQueryChange(product.name);
         onProductSelect(product);
         setIsListVisible(false);
     };
@@ -85,7 +88,7 @@ const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProduct
     };
 
     const handleClearProduct = () => {
-        setProductQuery('');
+        onQueryChange('');
         onProductSelect(null);
     }
 
@@ -96,7 +99,7 @@ const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProduct
                     <label htmlFor="product-search" className="block text-sm font-medium text-gray-700 dark:text-spotify-gray mb-1">Product</label>
                     <div className="relative">
                         <ProductIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-spotify-gray" />
-                        <input id="product-search" type="text" value={productQuery} onChange={e => setProductQuery(e.target.value)} onFocus={() => setIsListVisible(true)} placeholder="Search or select a product..." className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" autoComplete="off" />
+                        <input id="product-search" type="text" value={productQuery} onChange={e => onQueryChange(e.target.value)} onFocus={() => setIsListVisible(true)} placeholder="Search or select a product..." className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-spotify-light-dark rounded-md focus:ring-spotify-green focus:border-spotify-green" autoComplete="off" />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                             {productQuery && <button onClick={handleClearProduct} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ClearIcon className="w-4 h-4"/></button>}
                             <ChevronDownIcon className="w-5 h-5 text-gray-400 pointer-events-none"/>
@@ -118,6 +121,22 @@ const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProduct
                     </select>
                 </div>
             </div>
+            {recentlyViewed.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-spotify-gray mb-2 uppercase tracking-wider">Recently Viewed</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {recentlyViewed.map(product => (
+                            <button
+                                key={product.name}
+                                onClick={() => onRecentClick(product)}
+                                className="px-3 py-1 text-sm bg-gray-100 dark:bg-spotify-light-dark text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                {product.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -126,18 +145,32 @@ const ProductSearchControls: React.FC<ProductSearchControlsProps> = ({ onProduct
 const ProductDashboardPage: React.FC = () => {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [productQuery, setProductQuery] = useState('');
+    const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
     const [reportResults, setReportResults] = useState<IngredientCompliance[]>([]);
     const [isReportLoading, setIsReportLoading] = useState(false);
     const [viewingIngredient, setViewingIngredient] = useState<IngredientCompliance | null>(null);
     
     const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
+    const addRecentlyViewed = useCallback((product: Product) => {
+        setRecentlyViewed(prev => {
+            const newList = [product, ...prev.filter(p => p.name !== product.name)];
+            return newList.slice(0, 5); // Keep max 5
+        });
+    }, []);
+
     useEffect(() => {
-        setIsLoadingDashboard(true); // Reset loading state when selection changes
+        setIsLoadingDashboard(true);
         const timer = setTimeout(() => setIsLoadingDashboard(false), 1000);
         return () => clearTimeout(timer);
     }, [selectedCountry, selectedProduct]);
 
+    useEffect(() => {
+        if (selectedProduct) {
+            addRecentlyViewed(selectedProduct);
+        }
+    }, [selectedProduct, addRecentlyViewed]);
 
     useEffect(() => {
         if (!selectedProduct || !selectedCountry) {
@@ -232,6 +265,18 @@ const ProductDashboardPage: React.FC = () => {
             trendData,
         };
     }, [reportResults, selectedProduct]);
+    
+    const handleQueryChange = (query: string) => {
+        setProductQuery(query);
+        if (!query) {
+            setSelectedProduct(null);
+        }
+    };
+    
+    const handleRecentClick = (product: Product) => {
+        setProductQuery(product.name);
+        setSelectedProduct(product);
+    };
 
     const renderContent = () => {
         if (!selectedCountry && !selectedProduct) {
@@ -303,7 +348,7 @@ const ProductDashboardPage: React.FC = () => {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                                 <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Ingredient Compliance Rate</h3><ComplianceRateGauge value={productChartData.complianceRate} isLoading={isReportLoading} /></div>
-                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Ingredient Status Breakdown</h3><ComplianceChart data={productChartData.statusBreakdown} totalLabel="Ingredients" isLoading={isReportLoading} /></div>
+                                <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Ingredient Status Breakdown</h3><StatusBreakdownBarChart data={productChartData.statusBreakdown} isLoading={isReportLoading} /></div>
                                 <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Ingredient Composition</h3><IngredientCompositionChart data={productChartData.ingredientComposition} isLoading={isReportLoading} /></div>
                                 <div className="bg-white dark:bg-spotify-card p-4 rounded-lg shadow-md flex flex-col min-h-[250px]"><h3 className="text-md font-bold mb-2 flex-shrink-0">Product Compliance Trend</h3><ComplianceTrendChart data={productChartData.trendData} isLoading={isReportLoading} /></div>
                             </div>
@@ -319,8 +364,12 @@ const ProductDashboardPage: React.FC = () => {
             <div className="h-full flex flex-col p-2 md:p-4 gap-4">
                 <div className="flex-shrink-0">
                     <ProductSearchControls 
+                        productQuery={productQuery}
+                        onQueryChange={handleQueryChange}
                         onProductSelect={setSelectedProduct}
                         onCountrySelect={setSelectedCountry}
+                        recentlyViewed={recentlyViewed}
+                        onRecentClick={handleRecentClick}
                     />
                 </div>
                 {renderContent()}
